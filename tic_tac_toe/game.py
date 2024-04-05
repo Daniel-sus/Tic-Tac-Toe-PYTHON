@@ -1,72 +1,171 @@
-import random
-
-
 class TicTacToe:
-    SYMBOLS = ['#', '@', '$', '%']
-
     def __init__(self, num_players, player_names, grid_size):
-        self.validate_num_players(num_players)
-        self.validate_grid_size(grid_size)
         self.num_players = num_players
         self.player_names = player_names
         self.grid_size = grid_size
-        self.board = self.create_board(grid_size)
-        self.player_symbols = self.assign_symbols()
         self.current_player_index = 0
-        self.current_player = self.player_names[self.current_player_index]
-
-    def validate_num_players(self, num_players):
-        if not 2 <= num_players <= 4:
-            raise ValueError("Number of players must be between 2 and 4.")
-
-    def validate_grid_size(self, grid_size):
-        if not 5 <= grid_size <= 25:
-            raise ValueError("Grid size must be between 5 and 25.")
-
-    def create_board(self, grid_size):
-        return [[' ' for _ in range(grid_size)] for _ in range(grid_size)]
-
-    def assign_symbols(self):
-        symbols = random.sample(self.SYMBOLS, self.num_players)
-        return {player: symbol for player, symbol in zip(self.player_names, symbols)}
+        self.current_player = player_names[self.current_player_index]
+        self.board = [['' for _ in range(grid_size)] for _ in range(grid_size)]
+        self.symbols = ['#', '@', '$', '%']
+        self.moves_left = grid_size * grid_size
 
     def make_move(self, row, col):
-        if self.board[row][col] == ' ':
-            self.board[row][col] = self.player_symbols[self.current_player]
-            if self.check_winner(row, col):
-                return 'win', self.current_player
-            elif self.check_board_full():
-                return 'draw', None
-            else:
-                self.switch_player()
-                return 'success', None
-        else:
-            return 'occupied', None
+        if self.board[row][col] != '':
+            return 'occupied', None, []
 
-    def switch_player(self):
+        self.board[row][col] = self.symbols[self.current_player_index]
+        self.moves_left -= 1
+
+        # Check for victory
+        if self.check_victory(row, col):
+            winning_cells = self.get_winning_cells(row, col)
+            return 'win', self.player_names[self.current_player_index], winning_cells
+
+        # Check for draw
+        if self.moves_left == 0:
+            return 'draw', None, []
+
+        # Switch to the next player
         self.current_player_index = (self.current_player_index + 1) % self.num_players
         self.current_player = self.player_names[self.current_player_index]
+        return 'success', None, []
 
-    def check_winner(self, row, col):
-        symbol = self.player_symbols[self.current_player]
+    def check_victory(self, row, col):
+        symbol = self.board[row][col]
+        min_symbols_for_victory = (self.grid_size + 1) // 2
 
-        # Check horizontally
-        if all(self.board[row][c] == symbol for c in range(self.grid_size)):
+        # Check horizontal
+        count = 1
+        for c in range(col + 1, self.grid_size):
+            if self.board[row][c] == symbol:
+                count += 1
+            else:
+                break
+        for c in range(col - 1, -1, -1):
+            if self.board[row][c] == symbol:
+                count += 1
+            else:
+                break
+        if count >= min_symbols_for_victory:
             return True
 
-        # Check vertically
-        if all(self.board[r][col] == symbol for r in range(self.grid_size)):
+        # Check vertical
+        count = 1
+        for r in range(row + 1, self.grid_size):
+            if self.board[r][col] == symbol:
+                count += 1
+            else:
+                break
+        for r in range(row - 1, -1, -1):
+            if self.board[r][col] == symbol:
+                count += 1
+            else:
+                break
+        if count >= min_symbols_for_victory:
             return True
 
-        # Check diagonally (top-left to bottom-right)
-        if all(self.board[i][i] == symbol for i in range(self.grid_size)):
+        # Check diagonal (top-left to bottom-right)
+        count = 1
+        for i in range(1, min(row, col) + 1):
+            if self.board[row - i][col - i] == symbol:
+                count += 1
+            else:
+                break
+        for i in range(1, min(self.grid_size - row, self.grid_size - col)):
+            if self.board[row + i][col + i] == symbol:
+                count += 1
+            else:
+                break
+        if count >= min_symbols_for_victory:
             return True
 
-        # Check diagonally (top-right to bottom-left)
-        if all(self.board[i][self.grid_size - 1 - i] == symbol for i in range(self.grid_size)):
+        # Check diagonal (top-right to bottom-left)
+        count = 1
+        for i in range(1, min(row, self.grid_size - col - 1) + 1):
+            if self.board[row - i][col + i] == symbol:
+                count += 1
+            else:
+                break
+        for i in range(1, min(self.grid_size - row, col + 1)):
+            if self.board[row + i][col - i] == symbol:
+                count += 1
+            else:
+                break
+        if count >= min_symbols_for_victory:
             return True
 
         return False
 
-    def check_board_full(self):
-        return all(self.board[row][col] != ' ' for row in range(self.grid_size) for col in range(self.grid_size))
+    def get_winning_cells(self, row, col):
+        symbol = self.board[row][col]
+        winning_cells = [[row, col]]
+
+        # Check horizontal
+        count = 1
+        for c in range(col + 1, self.grid_size):
+            if self.board[row][c] == symbol:
+                count += 1
+                winning_cells.append([row, c])
+            else:
+                break
+        for c in range(col - 1, -1, -1):
+            if self.board[row][c] == symbol:
+                count += 1
+                winning_cells.append([row, c])
+            else:
+                break
+        if count >= self.grid_size // 2:
+            return winning_cells
+
+        # Check vertical
+        count = 1
+        for r in range(row + 1, self.grid_size):
+            if self.board[r][col] == symbol:
+                count += 1
+                winning_cells.append([r, col])
+            else:
+                break
+        for r in range(row - 1, -1, -1):
+            if self.board[r][col] == symbol:
+                count += 1
+                winning_cells.append([r, col])
+            else:
+                break
+        if count >= self.grid_size // 2:
+            return winning_cells
+
+        # Check diagonal (top-left to bottom-right)
+        count = 1
+        for i in range(1, min(row, col) + 1):
+            if self.board[row - i][col - i] == symbol:
+                count += 1
+                winning_cells.append([row - i, col - i])
+            else:
+                break
+        for i in range(1, min(self.grid_size - row, self.grid_size - col)):
+            if self.board[row + i][col + i] == symbol:
+                count += 1
+                winning_cells.append([row + i, col + i])
+            else:
+                break
+        if count >= self.grid_size // 2:
+            return winning_cells
+
+        # Check diagonal (top-right to bottom-left)
+        count = 1
+        for i in range(1, min(row, self.grid_size - col - 1) + 1):
+            if self.board[row - i][col + i] == symbol:
+                count += 1
+                winning_cells.append([row - i, col + i])
+            else:
+                break
+        for i in range(1, min(self.grid_size - row, col + 1)):
+            if self.board[row + i][col - i] == symbol:
+                count += 1
+                winning_cells.append([row + i, col - i])
+            else:
+                break
+        if count >= self.grid_size // 2:
+            return winning_cells
+
+        return []
