@@ -7,8 +7,10 @@
     <style>
         .board {
             display: grid;
-            grid-template-columns: repeat(5, 50px); /* Adjust grid size as needed */
-            grid-template-rows: repeat(5, 50px); /* Adjust grid size as needed */
+            /* Dynamically generate grid template columns based on grid size */
+            grid-template-columns: repeat({{ grid_size }}, 50px);
+            /* Dynamically generate grid template rows based on grid size */
+            grid-template-rows: repeat({{ grid_size }}, 50px);
             gap: 2px; /* Adjust gap between cells as needed */
         }
         .cell {
@@ -52,6 +54,9 @@
     {% endfor %}
 </div>
 <script>
+    // Read player symbols from game-init.json
+    const playerSymbols = JSON.parse('{{ player_symbols | tojson }}');
+
     // Function to make a move
     function makeMove(row, col) {
         const cell = cells[row][col];
@@ -73,11 +78,11 @@
                 if (result === 'success') {
                     currentPlayer = data.current_player;
                     document.getElementById('currentPlayer').innerText = `Current Player: ${currentPlayer}`;
-                    cell.innerText = currentPlayer === '{{ current_player }}' ? 'X' : 'O';
+                    // Use player symbol for the current player
+                    cell.innerText = playerSymbols[currentPlayer];
                     cell.classList.remove('blink'); // Remove blinking effect after making a move
                 } else if (result === 'win') {
                     messageDiv.innerText = `Congratulations! ${winner} wins!`;
-                    const winningSymbol = currentPlayer === '{{ current_player }}' ? 'X' : 'O';
                     // Display winning symbols on the board
                     const winningCells = data.winning_cells;
                     winningCells.forEach(cellCoords => {
