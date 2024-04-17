@@ -4,7 +4,7 @@ import random
 import random
 
 class TicTacToe:
-    def __init__(self, num_players, player_names, grid_size, player_symbols=None):
+    def __init__(self, num_players, player_names, grid_size, current_player_index, player_symbols):
         if num_players < 2:
             raise ValueError("Number of players must be at least 2.")
         if num_players > 4:
@@ -17,15 +17,11 @@ class TicTacToe:
         self.num_players = num_players
         self.player_names = player_names
         self.grid_size = grid_size
-        self.current_player_index = 0
+        self.current_player_index = current_player_index
         self.current_player = player_names[self.current_player_index]
         self.board = [['' for _ in range(grid_size)] for _ in range(grid_size)]
         self.symbols = ['#', '$', '%', '&']  # Define default symbols for players
-        if player_symbols is None:
-            random.shuffle(self.symbols)  # Shuffle symbols to assign randomly to players if not provided
-            self.player_symbols = {player: symbol for player, symbol in zip(player_names, self.symbols)}  # Map player names to symbols
-        else:
-            self.player_symbols = player_symbols
+        self.player_symbols = {player: symbol for player, symbol in zip(player_names, self.symbols)}  # Map player names to symbols
         self.moves_left = grid_size * grid_size
 
 
@@ -132,6 +128,7 @@ class TicTacToe:
             if self.board[row][c] == symbol:
                 count += 1
                 winning_cells.append([row, c])
+                print(winning_cells)
             else:
                 break
         for c in range(col - 1, -1, -1):

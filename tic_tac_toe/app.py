@@ -1,38 +1,60 @@
-from flask import Flask, render_template, request, jsonify
+import random
 from game import TicTacToe
-import json
+from pynput import keyboard
+from pynput.keyboard import Key
+from utils.selectFunctions import selectQuantityOfPlayers,selectPlayersNames,selectGridSize,selectPlayersSymbols
+from utils.guiFunctions import print_board
 
-app = Flask(__name__)
+# Game initialization 
+print("Welcome to Tic Tac Toe game")
+num_players = selectQuantityOfPlayers()
+player_names = selectPlayersNames(num_players)
+player_symbols = selectPlayersSymbols(player_names)
+grid_size = selectGridSize()
+current_player_index = random.randint(0, num_players-1)
+game = TicTacToe(num_players, player_names, grid_size, current_player_index, player_symbols)
+selectedCell = {"x": 0, "y": 0}
+print_board(game.board, game.current_player, selectedCell)
 
-# Function to read game initialization data from game-init.json
-def read_game_init():
-    with open('game-init.json', 'r') as file:
-        game_init_data = json.load(file)
-    return game_init_data
+def on_key_release(key):
+    if key == Key.enter:
+        result, winner, winning_cells = game.make_move(selectedCell["y"], selectedCell["x"])
+        print_board(game.board, game.current_player, selectedCell)
+        if winner:
+            print()
+            print()
+            print()
+            print("///////////////////////////")
+            print("      WINNER: " + winner)
+            print("///////////////////////////")
+            print()
+            print_board(game.board, game.current_player, selectedCell, winning_cells)
+            exit()
+    elif key == Key.right:
+        print(" Right key pressed")
+        if selectedCell["x"] < grid_size-1:
+            selectedCell["x"] += 1
+            print_board(game.board, game.current_player, selectedCell)
+    elif key == Key.left:
+        print(" Left key pressed")
+        if selectedCell["x"] > 0:
+            selectedCell["x"] -= 1
+            print_board(game.board, game.current_player, selectedCell)
+    elif key == Key.up:
+        print(" Up key pressed")
+        if selectedCell["y"] > 0:   
+            selectedCell["y"] -= 1
+            print_board(game.board, game.current_player, selectedCell)
+    elif key == Key.down:
+        print(" Down key pressed")
+        if selectedCell["y"] < grid_size-1:
+            selectedCell["y"] += 1
+            print_board(game.board, game.current_player, selectedCell)
+    elif key == Key.esc:
+        exit()
 
-# Read game initialization data
-game_init_data = read_game_init()
-num_players = game_init_data['num_players']
-player_names = game_init_data['player_names']
-grid_size = game_init_data['grid_size']
-player_symbols = game_init_data.get('player_symbols', None)  # Get player symbols from game-init.json, if available
-game = TicTacToe(num_players, player_names, grid_size, player_symbols)  # Initialize the game with player symbols
+    elif key in [Key.up, Key.down, Key.left, Key.right]:
+        pass
 
-@app.route('/')
-def index():
-    return render_template('index.html', grid_size=grid_size, current_player=game.current_player, player_symbols=game.player_symbols)
-
-@app.route('/make_move', methods=['POST'])
-def make_move():
-    global game
-    if not game:
-        return jsonify({'error': 'Game has not been initialized.'}), 500
-
-    data = request.json
-    row = data['row']
-    col = data['col']
-    result, winner, winning_cells = game.make_move(row, col)  # Include winning_cells in the response
-    return jsonify({'result': result, 'winner': winner, 'winning_cells': winning_cells, 'current_player': game.current_player})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+with keyboard.Listener(on_release=on_key_release) as listener:
+    listener.join()
